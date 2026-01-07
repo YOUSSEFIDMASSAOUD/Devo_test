@@ -1,57 +1,49 @@
-name: First Pipeline
+name: First Pipeline Locale
 
 on:
   push:
     branches: ["main"]
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
-  # 1. BUILD (On vérifie juste que le checkout marche)
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted # <--- Utilise ton PC
     steps:
       - name: Récupération du code
         uses: actions/checkout@v4
 
-  # 2. TEST (Vérification des fichiers)
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build
     steps:
-      - name: Récupérer le code
-        uses: actions/checkout@v4
-      - name: Test de présence des fichiers
+      - name: Vérification des fichiers HTML/CSS
+        shell: cmd
         run: |
-          if [ -f "index.html" ] && [ -f "index.css" ]; then
-            echo "Succès : les fichiers index.html et index.css ont été trouvés."
-          else
-            echo "Erreur : index.html ou index.css manquant."
-            exit 1
-          fi
+          if exist index.html (echo HTML OK) else (exit 1)
+          if exist index.css (echo CSS OK) else (exit 1)
 
-  # 3. SONAR (Utilisation de ton tunnel ngrok)
   sonar:
-    runs-on: ubuntu-latest
-    needs: build
+    runs-on: self-hosted
+    needs: test
     steps:
       - name: Récupération du code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 
-      - name: Analyse SonarQube
-        uses: SonarSource/sonarqube-scan-action@v3
+      - name: Analyse SonarQube Locale
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=Devo_test
-            -Dsonar.sources=.
+        shell: cmd
+        # Ici on utilise directement le scanner de ton PC
+        run: |
+          sonar-scanner ^
+            -Dsonar.projectKey=Devo_test ^
+            -Dsonar.sources=. ^
+            -Dsonar.host.url=http://localhost:9000 ^
+            -Dsonar.login=%SONAR_TOKEN%
 
-  # 4. DEPLOY (S'exécute seulement si Test ET Sonar sont OK)
   deploy:
-    runs-on: ubuntu-latest
-    needs: [sonar, test] 
+    runs-on: self-hosted
+    needs: sonar
     steps:
       - name: Deploiement
-        run: echo "Déploiement effectué avec succès sur l'environnement de production"
+        run: echo "Projet analyse et pret sur ton PC !"
