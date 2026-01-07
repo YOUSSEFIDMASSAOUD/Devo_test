@@ -1,0 +1,48 @@
+name: Pipeline CI-CD Complète
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: self-hosted
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installation des dépendances
+        run: npm install  
+
+      - name: Exécution des tests
+        run: npm test     
+
+  sonarqube-analysis:
+    needs: build-and-test
+    runs-on: self-hosted
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan avec SonarScanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            -Dsonar.projectKey=MonProjet \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=$SONAR_TOKEN
+
+  deploy:
+    needs: sonarqube-analysis
+    runs-on: self-hosted
+    steps:
+      - name: Déploiement
+        run: |
+          echo "Le code a été testé et analysé avec succès."
+          echo "Lancement du déploiement sur le serveur de production..."
+          # Ici, tu places tes commandes de déploiement, par exemple :
+          # pm2 restart app ou docker-compose up -d
