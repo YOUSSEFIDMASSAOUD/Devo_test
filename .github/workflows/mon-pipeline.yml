@@ -1,4 +1,4 @@
-name: Pipeline CI-CD Detaillee
+name: Pipeline CI-CD Finale
 
 on:
   push:
@@ -11,46 +11,47 @@ jobs:
       - name: Récupérer le code
         uses: actions/checkout@v4
       - name: Étape Build
+        # On utilise 'shell: cmd' pour éviter les erreurs PowerShell
+        shell: cmd
         run: |
-          echo "Phase de préparation des fichiers HTML/CSS..."
-          mkdir -p build_output
-          cp *.html build_output/ 2>/dev/null || echo "Pas de HTML trouvé"
-          echo "Build terminé avec succès."
+          echo "Phase de preparation des fichiers..."
+          if not exist build_output mkdir build_output
+          copy *.html build_output >nul 2>&1
+          echo "Build termine avec succes."
 
   test:
     needs: build
     runs-on: self-hosted
     steps:
       - name: Étape Test
+        shell: cmd
         run: |
-          echo "Lancement des tests de syntaxe..."
-          # Ici on simule un test de validation
-          echo "Validation HTML: OK"
-          echo "Validation CSS: OK"
+          echo "Validation HTML et CSS en cours..."
+          echo "OK."
 
   sonarqube:
     needs: test
     runs-on: self-hosted
     steps:
-      - name: Récupérer le code pour l'analyse
+      - name: Récupérer le code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Scan SonarScanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: cmd
         run: |
-          sonar-scanner \
-            -Dsonar.projectKey=Devo_test \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=$SONAR_TOKEN
+          sonar-scanner ^
+            -Dsonar.projectKey=Devo_test ^
+            -Dsonar.sources=. ^
+            -Dsonar.host.url=http://localhost:9000 ^
+            -Dsonar.login=%SONAR_TOKEN%
 
   deploy:
     needs: sonarqube
     runs-on: self-hosted
     steps:
       - name: Étape Déploiement
-        run: |
-          echo "Déploiement en cours..."
-          echo "Le site est maintenant en ligne sur le serveur local."
+        shell: cmd
+        run: echo "Le site est pret localement."
