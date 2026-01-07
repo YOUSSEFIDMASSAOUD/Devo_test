@@ -1,57 +1,58 @@
-name: Pipeline CI-CD Finale
+name: First Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
+  # 1. BUILD (On vérifie juste que le checkout marche)
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+  # 2. TEST (Vérification des fichiers)
+  test:
+    runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
-      - name: Étape Build
-        # On utilise 'shell: cmd' pour éviter les erreurs PowerShell
-        shell: cmd
+      - name: Test de présence des fichiers
         run: |
-          echo "Phase de preparation des fichiers..."
-          if not exist build_output mkdir build_output
-          copy *.html build_output >nul 2>&1
-          echo "Build termine avec succes."
+          if [ -f "index.html" ] && [ -f "index.css" ]; then
+            echo "Succès : les fichiers index.html et index.css ont été trouvés."
+          else
+            echo "Erreur : index.html ou index.css manquant."
+            exit 1
+          fi
 
-  test:
+  # 3. SONAR (Utilisation de ton tunnel ngrok)
+  sonar:
+    runs-on: ubuntu-latest
     needs: build
-    runs-on: self-hosted
     steps:
-      - name: Étape Test
-        shell: cmd
-        run: |
-          echo "Validation HTML et CSS en cours..."
-          echo "OK."
-
-  sonarqube:
-    needs: test
-    runs-on: self-hosted
-    steps:
-      - name: Récupérer le code
+      - name: Récupération du code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Scan SonarScanner
+          fetch-depth: 0 
+      - name: Analyse SonarQube
+        uses: SonarSource/sonarqube-scan-action@v3
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        shell: cmd
-        run: |
-          sonar-scanner ^
-            -Dsonar.projectKey=Devo_test ^
-            -Dsonar.sources=. ^
-            -Dsonar.host.url=http://localhost:9000 ^
-            -Dsonar.login=%SONAR_TOKEN%
+          SONAR_HOST_URL: "https://colby-flaxen-anya.ngrok-free.dev"
+        with:
+          args: >
+            -Dsonar.projectKey=Devo_test
+            -Dsonar.sources=.
 
+  # 4. DEPLOY (S'exécute seulement si Test ET Sonar sont OK)
   deploy:
-    needs: sonarqube
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    needs: [sonar, test] 
     steps:
-      - name: Étape Déploiement
-        shell: cmd
-        run: echo "Le site est pret localement."
+      - name: Deploiement
+        run: echo "Déploiement effectué avec succès sur l'environnement de production"
