@@ -43,7 +43,6 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v3
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://colby-flaxen-anya.ngrok-free.dev"
         with:
           args: >
             -Dsonar.projectKey=Devo_test
