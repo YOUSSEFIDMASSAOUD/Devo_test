@@ -1,24 +1,23 @@
-name: Pipeline CI-CD Complète
+name: Pipeline CI-CD HTML-CSS
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  build-and-test:
+  check-files:
     runs-on: self-hosted
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
 
-      - name: Installation des dépendances
-        run: npm install  
-
-      - name: Exécution des tests
-        run: npm test     
+      - name: Vérification des fichiers
+        run: |
+          echo "Vérification de la présence des fichiers..."
+          ls -R # Liste les fichiers pour vérifier que tout est bien là
 
   sonarqube-analysis:
-    needs: build-and-test
+    needs: check-files
     runs-on: self-hosted
     steps:
       - name: Récupérer le code
@@ -31,18 +30,18 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           sonar-scanner \
-            -Dsonar.projectKey=MonProjet \
+            -Dsonar.projectKey=Devo_test \
             -Dsonar.sources=. \
             -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=$SONAR_TOKEN
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
   deploy:
     needs: sonarqube-analysis
     runs-on: self-hosted
     steps:
-      - name: Déploiement
+      - name: Déploiement Local
         run: |
-          echo "Le code a été testé et analysé avec succès."
-          echo "Lancement du déploiement sur le serveur de production..."
-          # Ici, tu places tes commandes de déploiement, par exemple :
-          # pm2 restart app ou docker-compose up -d
+          echo "Analyse terminée avec succès."
+          # Exemple : Copier les fichiers vers ton dossier de serveur web local (ex: Apache ou Nginx)
+          # xcopy . C:\xampp\htdocs\mon_projet /E /Y  (Pour Windows)
+          # cp -r . /var/www/html/mon_projet (Pour Linux)
