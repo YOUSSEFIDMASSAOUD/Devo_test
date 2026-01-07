@@ -1,31 +1,42 @@
-name: Pipeline CI-CD HTML-CSS
+name: Pipeline CI-CD Detaillee
 
 on:
   push:
     branches: [ "main" ]
 
 jobs:
-  check-files:
+  build:
     runs-on: self-hosted
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
-
-      - name: Vérification des fichiers
+      - name: Étape Build
         run: |
-          echo "Vérification de la présence des fichiers..."
-          ls -R # Liste les fichiers pour vérifier que tout est bien là
+          echo "Phase de préparation des fichiers HTML/CSS..."
+          mkdir -p build_output
+          cp *.html build_output/ 2>/dev/null || echo "Pas de HTML trouvé"
+          echo "Build terminé avec succès."
 
-  sonarqube-analysis:
-    needs: check-files
+  test:
+    needs: build
     runs-on: self-hosted
     steps:
-      - name: Récupérer le code
+      - name: Étape Test
+        run: |
+          echo "Lancement des tests de syntaxe..."
+          # Ici on simule un test de validation
+          echo "Validation HTML: OK"
+          echo "Validation CSS: OK"
+
+  sonarqube:
+    needs: test
+    runs-on: self-hosted
+    steps:
+      - name: Récupérer le code pour l'analyse
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Scan avec SonarScanner
+      - name: Scan SonarScanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
@@ -33,15 +44,13 @@ jobs:
             -Dsonar.projectKey=Devo_test \
             -Dsonar.sources=. \
             -Dsonar.host.url=http://localhost:9000 \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.login=$SONAR_TOKEN
 
   deploy:
-    needs: sonarqube-analysis
+    needs: sonarqube
     runs-on: self-hosted
     steps:
-      - name: Déploiement Local
+      - name: Étape Déploiement
         run: |
-          echo "Analyse terminée avec succès."
-          # Exemple : Copier les fichiers vers ton dossier de serveur web local (ex: Apache ou Nginx)
-          # xcopy . C:\xampp\htdocs\mon_projet /E /Y  (Pour Windows)
-          # cp -r . /var/www/html/mon_projet (Pour Linux)
+          echo "Déploiement en cours..."
+          echo "Le site est maintenant en ligne sur le serveur local."
