@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted # <--- Utilise ton PC
+    runs-on: self-hosted 
     steps:
       - name: Récupération du code
         uses: actions/checkout@v4
